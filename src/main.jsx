@@ -1,11 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-
-function App() {
-  return (
-    <h1>AgriLine SA USSD Simulator</h1>
-  );
-}
+import App from './App.jsx';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
