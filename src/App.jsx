@@ -2,7 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Phone, PhoneOff, Star, Clock, User, Voicemail, LayoutGrid } from 'lucide-react';
 
 /*
-  Vula Lwazi — USSD Crop Planting Advisor (prelim build)
+  Vula Lwazi — USSD community services helpline (prelim build)
+  Main menu: Health & Clinics, Social Grants (SASSA), Agriculture & Farming,
+  Municipal Services, Scam & Fraud Alerts, Leave Feedback.
+  Health, Municipal, Scam and Feedback are stub placeholders for now —
+  only Social Grants and Agriculture & Farming are fully built out.
   ------------------------------------------------
   HOW TO EXTEND THE MENU TREE (see USSD_TREE below):
   Each USSD code (e.g. "*1234#") maps to a set of named "nodes".
@@ -369,16 +373,606 @@ Harvest: 6-8 weeks; pick outer leaves or cut whole head at maturity
 
 /* ------------------------------- USSD TREE -------------------------------- */
 
+/* ------------------------------ HEALTH & CLINICS --------------------------- */
+
+const illness_flu = `Flu & Colds
+
+Common symptoms: fever, body aches, sore throat, runny nose, tiredness.
+
+Home care:
+- Rest and stay warm
+- Drink plenty of fluids (water, soup, warm drinks)
+- A pharmacist can advise on a suitable fever/pain reliever and correct dose
+- Cover coughs/sneezes and wash hands often to avoid spreading it
+
+See a clinic if:
+- Fever lasts more than 3 days
+- Difficulty breathing or chest pain
+- Symptoms are severe, or you have an existing health condition
+
+This is general guidance only, not a diagnosis.
+
+0. Back to illnesses
+00. Main menu`;
+
+const illness_fever = `Fever
+
+A fever is usually the body fighting an infection.
+
+Home care:
+- Rest and drink plenty of fluids
+- Dress lightly and keep the room cool
+- Tepid (lukewarm) sponging can help bring temperature down
+- A pharmacist can advise on a suitable fever reducer and correct dose for your age
+
+See a clinic urgently if:
+- Fever is very high, or lasts more than 3 days
+- The person is a baby, elderly, or pregnant
+- Fever comes with a stiff neck, rash, confusion, or difficulty breathing
+
+This is general guidance only, not a diagnosis.
+
+0. Back to illnesses
+00. Main menu`;
+
+const illness_stomach = `Stomach Ache & Diarrhoea
+
+Home care:
+- Drink oral rehydration solution (ORS), or clean water with a little sugar and a pinch of salt, to prevent dehydration
+- Eat small, bland meals once you can tolerate food (rice, bananas, dry toast)
+- Rest, and avoid dairy, caffeine and fatty foods until you recover
+- Wash hands well to avoid spreading infection
+
+See a clinic if:
+- There is blood in the stool or vomit
+- Diarrhoea lasts more than 2 days, or affects a young child or elderly person
+- Signs of dehydration: dry mouth, little/no urine, dizziness
+- Severe abdominal pain
+
+This is general guidance only, not a diagnosis.
+
+0. Back to illnesses
+00. Main menu`;
+
+const illness_headache = `Headache
+
+Home care:
+- Rest in a quiet, dim room
+- Drink water — dehydration is a common cause
+- A pharmacist can advise on a suitable pain reliever and correct dose
+- Gentle neck/shoulder stretches can help tension headaches
+
+See a clinic urgently if:
+- It's the "worst headache of your life", or came on suddenly and severely
+- It follows a head injury
+- It comes with fever, stiff neck, confusion, or vision changes
+
+This is general guidance only, not a diagnosis.
+
+0. Back to illnesses
+00. Main menu`;
+
+const illness_cough = `Cough
+
+Home care:
+- Warm fluids (tea with honey) can soothe the throat
+- Stay hydrated and rest
+- Avoid smoke and other irritants
+- A pharmacist can advise on a suitable cough remedy
+
+See a clinic if:
+- Cough lasts more than 2-3 weeks
+- Coughing up blood
+- Difficulty breathing, chest pain, or high fever
+- Any TB symptoms (night sweats, weight loss, prolonged cough) — free TB testing is available at public clinics
+
+This is general guidance only, not a diagnosis.
+
+0. Back to illnesses
+00. Main menu`;
+
+const illness_wound = `Minor Cuts & Wounds
+
+Home care:
+- Wash your hands, then clean the wound with clean water
+- Apply gentle pressure with a clean cloth to stop bleeding
+- Apply an antiseptic if available, and cover with a clean plaster/bandage
+- Change the dressing daily and keep the wound dry
+
+See a clinic if:
+- Bleeding doesn't stop after 10 minutes of pressure
+- The cut is deep, gaping, or from a dirty/rusty object (you may need a tetanus check)
+- Signs of infection: redness, swelling, pus, warmth, or fever
+
+This is general guidance only, not a diagnosis.
+
+0. Back to illnesses
+00. Main menu`;
+
+// Note: precise per-town clinic data would need a live facility-database lookup we
+// don't have in this prototype, so each result below anchors on a real, verifiable
+// major provincial facility plus real provincial contact lines, rather than
+// inventing a specific clinic for whatever town is typed in.
+
+const clinic_ec_result = `Clinics & Hospitals — Eastern Cape
+
+For \${town}, your nearest major public hospital is likely Livingstone Hospital (Gqeberha) or Frere Hospital (East London), depending on your area.
+
+To find your nearest clinic precisely:
+- Visit clinicfinder.co.za
+- Call the EC Health provincial line: 0800 032 364
+- In a medical emergency, dial 10177 or 112
+
+0. Back to province list
+00. Main menu`;
+
+const clinic_fs_result = `Clinics & Hospitals — Free State
+
+For \${town}, your nearest major public hospital is likely Universitas Academic Hospital (Bloemfontein).
+
+To find your nearest clinic precisely:
+- Visit clinicfinder.co.za
+- Call the FS Health provincial line: 0800 535 554
+- In a medical emergency, dial 10177 or 112
+
+0. Back to province list
+00. Main menu`;
+
+const clinic_gp_result = `Clinics & Hospitals — Gauteng
+
+For \${town}, your nearest major public hospital is likely Chris Hani Baragwanath Academic Hospital (Soweto) or Steve Biko Academic Hospital (Pretoria), depending on your area.
+
+To find your nearest clinic precisely:
+- Visit clinicfinder.co.za
+- Call the GP Health provincial line: 0800 203 886
+- In a medical emergency, dial 10177 or 112
+
+0. Back to province list
+00. Main menu`;
+
+const clinic_kzn_result = `Clinics & Hospitals — KwaZulu-Natal
+
+For \${town}, your nearest major public hospital is likely Inkosi Albert Luthuli Central Hospital (Durban).
+
+To find your nearest clinic precisely:
+- Visit clinicfinder.co.za
+- Call the KZN Health provincial line: 033 395 2009
+- In a medical emergency, dial 10177 or 112
+
+0. Back to province list
+00. Main menu`;
+
+const clinic_lp_result = `Clinics & Hospitals — Limpopo
+
+For \${town}, your nearest major public hospital is likely Pietersburg/Mankweng Hospital Complex (Polokwane).
+
+To find your nearest clinic precisely:
+- Visit clinicfinder.co.za
+- Call the Limpopo Health provincial line: 0800 919 191
+- In a medical emergency, dial 10177 or 112
+
+0. Back to province list
+00. Main menu`;
+
+const clinic_mp_result = `Clinics & Hospitals — Mpumalanga
+
+For \${town}, your nearest major public hospital is likely Rob Ferreira Hospital (Mbombela/Nelspruit).
+
+To find your nearest clinic precisely:
+- Visit clinicfinder.co.za
+- Call the Mpumalanga Health provincial line: 0800 204 098
+- In a medical emergency, dial 10177 or 112
+
+0. Back to province list
+00. Main menu`;
+
+const clinic_nc_result = `Clinics & Hospitals — Northern Cape
+
+For \${town}, your nearest major public hospital is likely Kimberley Hospital Complex.
+
+To find your nearest clinic precisely:
+- Visit clinicfinder.co.za
+- Call the Northern Cape Health provincial line: 018 387 5778
+- In a medical emergency, dial 10177 or 112
+
+0. Back to province list
+00. Main menu`;
+
+const clinic_nw_result = `Clinics & Hospitals — North West
+
+For \${town}, your nearest major public hospital is likely Klerksdorp-Tshepong Hospital Complex.
+
+To find your nearest clinic precisely:
+- Visit clinicfinder.co.za
+- Call the North West Health provincial line: 018 391 4000
+- In a medical emergency, dial 10177 or 112
+
+0. Back to province list
+00. Main menu`;
+
+const clinic_wc_result = `Clinics & Hospitals — Western Cape
+
+For \${town}, your nearest major public hospital is likely Groote Schuur Hospital or Tygerberg Hospital (Cape Town).
+
+To find your nearest clinic precisely:
+- Visit clinicfinder.co.za
+- Call the WC Health provincial line: 021 483 5624
+- In a medical emergency, dial 10177 or 112
+
+0. Back to province list
+00. Main menu`;
+
+/* --------------------------- SOCIAL GRANTS (SASSA) -------------------------- */
+
+// Precise per-town SASSA office addresses vary by source and change over time, so
+// each result below points to the national toll-free/WhatsApp lines and official
+// locator rather than a specific hardcoded office address.
+
+const grants_ec_result = `SASSA Collection Point — Eastern Cape
+
+Based on your age range (\${ageRange}), for \${town}, Eastern Cape:
+
+Call the SASSA toll-free helpline 0800 60 10 11 (Mon-Fri, 07:30-16:00) or WhatsApp "Hi" to 082 046 8553 and ask for your nearest SASSA office or grant collection point.
+
+You can also check sassa.gov.za/contact for an office locator, or srd.sassa.gov.za for SRD-specific payment info.
+
+0. Back to province list
+00. Main menu`;
+
+const grants_fs_result = `SASSA Collection Point — Free State
+
+Based on your age range (\${ageRange}), for \${town}, Free State:
+
+Call the SASSA toll-free helpline 0800 60 10 11 (Mon-Fri, 07:30-16:00) or WhatsApp "Hi" to 082 046 8553 and ask for your nearest SASSA office or grant collection point.
+
+You can also check sassa.gov.za/contact for an office locator, or srd.sassa.gov.za for SRD-specific payment info.
+
+0. Back to province list
+00. Main menu`;
+
+const grants_gp_result = `SASSA Collection Point — Gauteng
+
+Based on your age range (\${ageRange}), for \${town}, Gauteng:
+
+Call the SASSA toll-free helpline 0800 60 10 11 (Mon-Fri, 07:30-16:00) or WhatsApp "Hi" to 082 046 8553 and ask for your nearest SASSA office or grant collection point.
+
+You can also check sassa.gov.za/contact for an office locator, or srd.sassa.gov.za for SRD-specific payment info.
+
+0. Back to province list
+00. Main menu`;
+
+const grants_kzn_result = `SASSA Collection Point — KwaZulu-Natal
+
+Based on your age range (\${ageRange}), for \${town}, KwaZulu-Natal:
+
+Call the SASSA toll-free helpline 0800 60 10 11 (Mon-Fri, 07:30-16:00) or WhatsApp "Hi" to 082 046 8553 and ask for your nearest SASSA office or grant collection point.
+
+You can also check sassa.gov.za/contact for an office locator, or srd.sassa.gov.za for SRD-specific payment info.
+
+0. Back to province list
+00. Main menu`;
+
+const grants_lp_result = `SASSA Collection Point — Limpopo
+
+Based on your age range (\${ageRange}), for \${town}, Limpopo:
+
+Call the SASSA toll-free helpline 0800 60 10 11 (Mon-Fri, 07:30-16:00) or WhatsApp "Hi" to 082 046 8553 and ask for your nearest SASSA office or grant collection point.
+
+You can also check sassa.gov.za/contact for an office locator, or srd.sassa.gov.za for SRD-specific payment info.
+
+0. Back to province list
+00. Main menu`;
+
+const grants_mp_result = `SASSA Collection Point — Mpumalanga
+
+Based on your age range (\${ageRange}), for \${town}, Mpumalanga:
+
+Call the SASSA toll-free helpline 0800 60 10 11 (Mon-Fri, 07:30-16:00) or WhatsApp "Hi" to 082 046 8553 and ask for your nearest SASSA office or grant collection point.
+
+You can also check sassa.gov.za/contact for an office locator, or srd.sassa.gov.za for SRD-specific payment info.
+
+0. Back to province list
+00. Main menu`;
+
+const grants_nc_result = `SASSA Collection Point — Northern Cape
+
+Based on your age range (\${ageRange}), for \${town}, Northern Cape:
+
+Call the SASSA toll-free helpline 0800 60 10 11 (Mon-Fri, 07:30-16:00) or WhatsApp "Hi" to 082 046 8553 and ask for your nearest SASSA office or grant collection point.
+
+You can also check sassa.gov.za/contact for an office locator, or srd.sassa.gov.za for SRD-specific payment info.
+
+0. Back to province list
+00. Main menu`;
+
+const grants_nw_result = `SASSA Collection Point — North West
+
+Based on your age range (\${ageRange}), for \${town}, North West:
+
+Call the SASSA toll-free helpline 0800 60 10 11 (Mon-Fri, 07:30-16:00) or WhatsApp "Hi" to 082 046 8553 and ask for your nearest SASSA office or grant collection point.
+
+You can also check sassa.gov.za/contact for an office locator, or srd.sassa.gov.za for SRD-specific payment info.
+
+0. Back to province list
+00. Main menu`;
+
+const grants_wc_result = `SASSA Collection Point — Western Cape
+
+Based on your age range (\${ageRange}), for \${town}, Western Cape:
+
+Call the SASSA toll-free helpline 0800 60 10 11 (Mon-Fri, 07:30-16:00) or WhatsApp "Hi" to 082 046 8553 and ask for your nearest SASSA office or grant collection point.
+
+You can also check sassa.gov.za/contact for an office locator, or srd.sassa.gov.za for SRD-specific payment info.
+
+0. Back to province list
+00. Main menu`;
+
+/* ----------------------------- MUNICIPAL SERVICES --------------------------- */
+
+const municipal_ec = `Municipal Services — Eastern Cape
+
+Nelson Mandela Bay (Gqeberha) faults: 0800 20 5050 (toll-free)
+
+For other Eastern Cape municipalities, contact your local municipal offices directly.
+
+National fallbacks:
+- Eskom Direct (power faults outside metro areas): 08600 37566
+- Dept of Water Affairs hotline (water issues): 0800 200 200
+
+0. Back to province list
+00. Main menu`;
+
+const municipal_fs = `Municipal Services — Free State
+
+We don't have a verified direct fault-reporting number for a Free State metro yet — contact your local municipal offices directly.
+
+National fallbacks:
+- Eskom Direct (power faults outside metro areas): 08600 37566
+- Dept of Water Affairs hotline (water issues): 0800 200 200
+
+0. Back to province list
+00. Main menu`;
+
+const municipal_gp = `Municipal Services — Gauteng
+
+City Power (Johannesburg) faults: 0860 562 874
+City of Tshwane (Pretoria) call centre: 012 358 9999
+Ekurhuleni faults: 0860 543 000
+
+0. Back to province list
+00. Main menu`;
+
+const municipal_kzn = `Municipal Services — KwaZulu-Natal
+
+eThekwini (Durban) faults: 0800 331 011
+
+For other KZN municipalities, contact your local municipal offices directly.
+
+0. Back to province list
+00. Main menu`;
+
+const municipal_lp = `Municipal Services — Limpopo
+
+We don't have a verified direct fault-reporting number for a Limpopo metro yet — contact your local municipal offices directly.
+
+National fallbacks:
+- Eskom Direct (power faults outside metro areas): 08600 37566
+- Dept of Water Affairs hotline (water issues): 0800 200 200
+
+0. Back to province list
+00. Main menu`;
+
+const municipal_mp = `Municipal Services — Mpumalanga
+
+Mbombela (Nelspruit) faults: 086 162 6623
+
+For other Mpumalanga municipalities, contact your local municipal offices directly.
+
+0. Back to province list
+00. Main menu`;
+
+const municipal_nc = `Municipal Services — Northern Cape
+
+Sol Plaatje (Kimberley) faults: 053 830 6111
+
+For other Northern Cape municipalities, contact your local municipal offices directly.
+
+0. Back to province list
+00. Main menu`;
+
+const municipal_nw = `Municipal Services — North West
+
+Mahikeng faults: 018 388 9000
+
+For other North West municipalities, contact your local municipal offices directly.
+
+0. Back to province list
+00. Main menu`;
+
+const municipal_wc = `Municipal Services — Western Cape
+
+City of Cape Town faults (water, electricity, refuse): 0860 103 089
+
+For other Western Cape municipalities, contact your local municipal offices directly.
+
+0. Back to province list
+00. Main menu`;
+
+/* --------------------------- SCAM & FRAUD ALERTS ---------------------------- */
+
+const scam_simswap = `SIM Swap Fraud
+
+Warning signs:
+- Your phone suddenly loses signal/network for no reason
+- You stop receiving calls/SMS people say they sent you
+- You get an OTP or "SIM swap approved" message you didn't request
+
+If you suspect it's happening right now, call your network's fraud line immediately:
+- Vodacom: 082 1956 or 135
+- MTN: 083 190 or 135
+- Telkom: 081 180 0000 or 10213
+- Cell C: 084 140
+
+Then contact your bank to freeze suspicious transactions, and report it to SAPS.
+
+0. Back to alerts
+00. Main menu`;
+
+const scam_sassa = `SASSA / Grant Scams
+
+Common tricks:
+- Fake SMS/WhatsApp links saying your grant is "suspended" — asking you to click and enter your ID or PIN
+- Callers claiming to be SASSA agents asking for your OTP or banking PIN
+- People charging a fee to "help" you apply — SASSA applications are free
+
+Remember: SASSA will never ask for your PIN or OTP, and never charges a fee to apply.
+
+Report it:
+- SASSA fraud hotline: 0800 60 10 11 (option 4), or email fraud@sassa.gov.za
+- SAPS Crime Stop: 08600 10111
+
+0. Back to alerts
+00. Main menu`;
+
+const scam_phishing = `Phishing SMS & USSD Scams
+
+Warning signs:
+- Urgent messages claiming your bank/grant/account will be blocked
+- Links to sites that look official but have odd spelling in the address
+- Any request for your PIN, OTP, or password by SMS, call, or USSD
+
+Stay safe:
+- Never share your PIN or OTP with anyone, even someone claiming to be your bank or SASSA
+- Don't click links in unexpected messages — go directly to the official app/website instead
+- Verify by calling the organisation's official number yourself
+
+Report it: SAPS Crime Stop 08600 10111, or your bank's fraud line.
+
+0. Back to alerts
+00. Main menu`;
+
+const scam_investment = `Investment / Ponzi Scams
+
+Warning signs:
+- "Guaranteed" high returns with little or no risk
+- Pressure to recruit others to earn more ("get in early")
+- Unregistered schemes not licensed by the FSCA
+
+Before investing:
+- Check if the scheme/company is registered with the Financial Sector Conduct Authority (FSCA)
+- Be very cautious of investments promoted mainly on WhatsApp/social media
+
+Report it: FSCA Contact Centre 0800 20 3722, or SAPS Crime Stop 08600 10111.
+
+0. Back to alerts
+00. Main menu`;
+
+const scam_jobs = `Job Scams
+
+Warning signs:
+- Being asked to pay an upfront "registration" or "training" fee for a job
+- Job offers you didn't apply for, via SMS/WhatsApp, with unrealistic pay
+- Requests for your ID copy and banking details before any real interview
+
+Stay safe:
+- Legitimate employers do not ask you to pay to get hired
+- Verify the company independently before sharing personal documents
+- Apply only through official company websites or reputable job platforms
+
+Report it: SAPS Crime Stop 08600 10111.
+
+0. Back to alerts
+00. Main menu`;
+
 const USSD_TREE = {
   '*1234#': {
     root: {
-      text: 'Welcome to Vula Lwazi\nFree planting advice for SA growing conditions.\n\nWhich season are you planting for?\n1. Summer\n2. Winter\n3. Spring\n4. Autumn',
-      options: { '1': 'summer', '2': 'winter', '3': 'spring', '4': 'autumn' },
+      text: 'Welcome to Vula Lwazi\n\n1. Health & Clinics\n2. Social Grants (SASSA)\n3. Agriculture & Farming\n4. Municipal Services\n5. Scam & Fraud Alerts\n6. Leave Feedback',
+      options: { '1': 'health', '2': 'grants', '3': 'agri_root', '4': 'municipal', '5': 'scam', '6': 'feedback' },
+    },
+
+    /* ------------------------------ Health & Clinics ------------------------------ */
+    health: {
+      text: 'Health & Clinics\n1. Common Illnesses & Remedies\n2. Find a Clinic/Hospital\n\n0. Main menu',
+      options: { '1': 'health_illness', '2': 'health_clinics', '0': 'root' },
+    },
+    health_illness: {
+      text: 'Common Illnesses\n1. Flu & Colds\n2. Fever\n3. Stomach Ache & Diarrhoea\n4. Headache\n5. Cough\n6. Minor Cuts & Wounds\n\n0. Back',
+      options: { '1': 'illness_flu', '2': 'illness_fever', '3': 'illness_stomach', '4': 'illness_headache', '5': 'illness_cough', '6': 'illness_wound', '0': 'health' },
+    },
+    illness_flu: { text: illness_flu, options: { '0': 'health_illness', '00': 'root' } },
+    illness_fever: { text: illness_fever, options: { '0': 'health_illness', '00': 'root' } },
+    illness_stomach: { text: illness_stomach, options: { '0': 'health_illness', '00': 'root' } },
+    illness_headache: { text: illness_headache, options: { '0': 'health_illness', '00': 'root' } },
+    illness_cough: { text: illness_cough, options: { '0': 'health_illness', '00': 'root' } },
+    illness_wound: { text: illness_wound, options: { '0': 'health_illness', '00': 'root' } },
+
+    health_clinics: {
+      text: 'Find a Clinic/Hospital\nSelect your province:\n1. Eastern Cape\n2. Free State\n3. Gauteng\n4. KwaZulu-Natal\n5. Limpopo\n6. Mpumalanga\n7. Northern Cape\n8. North West\n9. Western Cape\n\n0. Back',
+      options: { '1': 'clinic_ec', '2': 'clinic_fs', '3': 'clinic_gp', '4': 'clinic_kzn', '5': 'clinic_lp', '6': 'clinic_mp', '7': 'clinic_nc', '8': 'clinic_nw', '9': 'clinic_wc', '0': 'health' },
+    },
+    clinic_ec: { text: 'Which city or town are you in?', next: 'clinic_ec_result', capture: 'town' },
+    clinic_fs: { text: 'Which city or town are you in?', next: 'clinic_fs_result', capture: 'town' },
+    clinic_gp: { text: 'Which city or town are you in?', next: 'clinic_gp_result', capture: 'town' },
+    clinic_kzn: { text: 'Which city or town are you in?', next: 'clinic_kzn_result', capture: 'town' },
+    clinic_lp: { text: 'Which city or town are you in?', next: 'clinic_lp_result', capture: 'town' },
+    clinic_mp: { text: 'Which city or town are you in?', next: 'clinic_mp_result', capture: 'town' },
+    clinic_nc: { text: 'Which city or town are you in?', next: 'clinic_nc_result', capture: 'town' },
+    clinic_nw: { text: 'Which city or town are you in?', next: 'clinic_nw_result', capture: 'town' },
+    clinic_wc: { text: 'Which city or town are you in?', next: 'clinic_wc_result', capture: 'town' },
+    clinic_ec_result: { text: clinic_ec_result, options: { '0': 'health_clinics', '00': 'root' } },
+    clinic_fs_result: { text: clinic_fs_result, options: { '0': 'health_clinics', '00': 'root' } },
+    clinic_gp_result: { text: clinic_gp_result, options: { '0': 'health_clinics', '00': 'root' } },
+    clinic_kzn_result: { text: clinic_kzn_result, options: { '0': 'health_clinics', '00': 'root' } },
+    clinic_lp_result: { text: clinic_lp_result, options: { '0': 'health_clinics', '00': 'root' } },
+    clinic_mp_result: { text: clinic_mp_result, options: { '0': 'health_clinics', '00': 'root' } },
+    clinic_nc_result: { text: clinic_nc_result, options: { '0': 'health_clinics', '00': 'root' } },
+    clinic_nw_result: { text: clinic_nw_result, options: { '0': 'health_clinics', '00': 'root' } },
+    clinic_wc_result: { text: clinic_wc_result, options: { '0': 'health_clinics', '00': 'root' } },
+
+    /* ------------------------------ Social Grants (SASSA) ------------------------------ */
+    grants: {
+      text: 'Social Grants (SASSA)\nWhat is your age range?\n1. Under 18\n2. 18 - 59\n3. 60 and older\n\n0. Main menu',
+      options: { '1': 'grants_province', '2': 'grants_province', '3': 'grants_province', '0': 'root' },
+      storeKey: 'ageRange',
+      optionLabels: {
+        '1': 'Under 18 (likely: Child Support or Foster Child Grant)',
+        '2': '18-59 (likely: Disability or SRD R370 Grant)',
+        '3': '60 and older (likely: Older Person\u2019s Grant)',
+      },
+    },
+    grants_province: {
+      text: 'Now select your province:\n1. Eastern Cape\n2. Free State\n3. Gauteng\n4. KwaZulu-Natal\n5. Limpopo\n6. Mpumalanga\n7. Northern Cape\n8. North West\n9. Western Cape\n\n0. Back',
+      options: { '1': 'grants_ec', '2': 'grants_fs', '3': 'grants_gp', '4': 'grants_kzn', '5': 'grants_lp', '6': 'grants_mp', '7': 'grants_nc', '8': 'grants_nw', '9': 'grants_wc', '0': 'grants' },
+    },
+    grants_ec: { text: 'Which city or town are you in?', next: 'grants_ec_result', capture: 'town' },
+    grants_fs: { text: 'Which city or town are you in?', next: 'grants_fs_result', capture: 'town' },
+    grants_gp: { text: 'Which city or town are you in?', next: 'grants_gp_result', capture: 'town' },
+    grants_kzn: { text: 'Which city or town are you in?', next: 'grants_kzn_result', capture: 'town' },
+    grants_lp: { text: 'Which city or town are you in?', next: 'grants_lp_result', capture: 'town' },
+    grants_mp: { text: 'Which city or town are you in?', next: 'grants_mp_result', capture: 'town' },
+    grants_nc: { text: 'Which city or town are you in?', next: 'grants_nc_result', capture: 'town' },
+    grants_nw: { text: 'Which city or town are you in?', next: 'grants_nw_result', capture: 'town' },
+    grants_wc: { text: 'Which city or town are you in?', next: 'grants_wc_result', capture: 'town' },
+    grants_ec_result: { text: grants_ec_result, options: { '0': 'grants_province', '00': 'root' } },
+    grants_fs_result: { text: grants_fs_result, options: { '0': 'grants_province', '00': 'root' } },
+    grants_gp_result: { text: grants_gp_result, options: { '0': 'grants_province', '00': 'root' } },
+    grants_kzn_result: { text: grants_kzn_result, options: { '0': 'grants_province', '00': 'root' } },
+    grants_lp_result: { text: grants_lp_result, options: { '0': 'grants_province', '00': 'root' } },
+    grants_mp_result: { text: grants_mp_result, options: { '0': 'grants_province', '00': 'root' } },
+    grants_nc_result: { text: grants_nc_result, options: { '0': 'grants_province', '00': 'root' } },
+    grants_nw_result: { text: grants_nw_result, options: { '0': 'grants_province', '00': 'root' } },
+    grants_wc_result: { text: grants_wc_result, options: { '0': 'grants_province', '00': 'root' } },
+
+    /* ------------------------------ Agriculture & Farming ------------------------------ */
+    agri_root: {
+      text: 'Agriculture & Farming\nFree planting advice for SA growing conditions.\n\nWhich season are you planting for?\n1. Summer\n2. Winter\n3. Spring\n4. Autumn\n\n0. Main menu',
+      options: { '1': 'summer', '2': 'winter', '3': 'spring', '4': 'autumn', '0': 'root' },
     },
 
     summer: {
       text: 'Summer crops (Dec-Feb):\n1. Watermelon\n2. Pumpkin & Butternut\n3. Sweet Potato\n4. Okra\n5. Sugar Beans\n\n0. Main menu',
-      options: { '1': 'summer_watermelon', '2': 'summer_pumpkin', '3': 'summer_sweetpotato', '4': 'summer_okra', '5': 'summer_sugarbeans', '0': 'root' },
+      options: { '1': 'summer_watermelon', '2': 'summer_pumpkin', '3': 'summer_sweetpotato', '4': 'summer_okra', '5': 'summer_sugarbeans', '0': 'agri_root' },
     },
     summer_watermelon: { text: summer_watermelon, options: { '0': 'summer', '00': 'root' } },
     summer_pumpkin: { text: summer_pumpkin, options: { '0': 'summer', '00': 'root' } },
@@ -388,7 +982,7 @@ const USSD_TREE = {
 
     winter: {
       text: 'Winter crops (Jun-Aug):\n1. Cabbage\n2. Cauliflower\n3. Broad Beans\n4. Peas\n5. Lettuce\n\n0. Main menu',
-      options: { '1': 'winter_cabbage', '2': 'winter_cauliflower', '3': 'winter_broadbeans', '4': 'winter_peas', '5': 'winter_lettuce', '0': 'root' },
+      options: { '1': 'winter_cabbage', '2': 'winter_cauliflower', '3': 'winter_broadbeans', '4': 'winter_peas', '5': 'winter_lettuce', '0': 'agri_root' },
     },
     winter_cabbage: { text: winter_cabbage, options: { '0': 'winter', '00': 'root' } },
     winter_cauliflower: { text: winter_cauliflower, options: { '0': 'winter', '00': 'root' } },
@@ -398,7 +992,7 @@ const USSD_TREE = {
 
     spring: {
       text: 'Spring crops (Sept-Nov):\n1. Tomatoes\n2. Green Beans\n3. Cucumber\n4. Sweetcorn\n5. Chillies & Peppers\n\n0. Main menu',
-      options: { '1': 'spring_tomatoes', '2': 'spring_beans', '3': 'spring_cucumber', '4': 'spring_sweetcorn', '5': 'spring_chillies', '0': 'root' },
+      options: { '1': 'spring_tomatoes', '2': 'spring_beans', '3': 'spring_cucumber', '4': 'spring_sweetcorn', '5': 'spring_chillies', '0': 'agri_root' },
     },
     spring_tomatoes: { text: spring_tomatoes, options: { '0': 'spring', '00': 'root' } },
     spring_beans: { text: spring_beans, options: { '0': 'spring', '00': 'root' } },
@@ -408,24 +1002,70 @@ const USSD_TREE = {
 
     autumn: {
       text: 'Autumn crops (Mar-May):\n1. Onions\n2. Garlic\n3. Spinach\n4. Broccoli\n5. Carrots\n\n0. Main menu',
-      options: { '1': 'autumn_onions', '2': 'autumn_garlic', '3': 'autumn_spinach', '4': 'autumn_broccoli', '5': 'autumn_carrots', '0': 'root' },
+      options: { '1': 'autumn_onions', '2': 'autumn_garlic', '3': 'autumn_spinach', '4': 'autumn_broccoli', '5': 'autumn_carrots', '0': 'agri_root' },
     },
     autumn_onions: { text: autumn_onions, options: { '0': 'autumn', '00': 'root' } },
     autumn_garlic: { text: autumn_garlic, options: { '0': 'autumn', '00': 'root' } },
     autumn_spinach: { text: autumn_spinach, options: { '0': 'autumn', '00': 'root' } },
     autumn_broccoli: { text: autumn_broccoli, options: { '0': 'autumn', '00': 'root' } },
     autumn_carrots: { text: autumn_carrots, options: { '0': 'autumn', '00': 'root' } },
+
+    /* ------------------------------ Municipal Services ------------------------------ */
+    municipal: {
+      text: 'Municipal Services\nSelect your province for local fault-reporting numbers:\n1. Eastern Cape\n2. Free State\n3. Gauteng\n4. KwaZulu-Natal\n5. Limpopo\n6. Mpumalanga\n7. Northern Cape\n8. North West\n9. Western Cape\n\n0. Main menu',
+      options: { '1': 'municipal_ec', '2': 'municipal_fs', '3': 'municipal_gp', '4': 'municipal_kzn', '5': 'municipal_lp', '6': 'municipal_mp', '7': 'municipal_nc', '8': 'municipal_nw', '9': 'municipal_wc', '0': 'root' },
+    },
+    municipal_ec: { text: municipal_ec, options: { '0': 'municipal', '00': 'root' } },
+    municipal_fs: { text: municipal_fs, options: { '0': 'municipal', '00': 'root' } },
+    municipal_gp: { text: municipal_gp, options: { '0': 'municipal', '00': 'root' } },
+    municipal_kzn: { text: municipal_kzn, options: { '0': 'municipal', '00': 'root' } },
+    municipal_lp: { text: municipal_lp, options: { '0': 'municipal', '00': 'root' } },
+    municipal_mp: { text: municipal_mp, options: { '0': 'municipal', '00': 'root' } },
+    municipal_nc: { text: municipal_nc, options: { '0': 'municipal', '00': 'root' } },
+    municipal_nw: { text: municipal_nw, options: { '0': 'municipal', '00': 'root' } },
+    municipal_wc: { text: municipal_wc, options: { '0': 'municipal', '00': 'root' } },
+
+    /* ------------------------------ Scam & Fraud Alerts ------------------------------ */
+    scam: {
+      text: 'Scam & Fraud Alerts\n1. SIM Swap Fraud\n2. SASSA/Grant Scams\n3. Phishing SMS & USSD Scams\n4. Investment/Ponzi Scams\n5. Job Scams\n\n0. Main menu',
+      options: { '1': 'scam_simswap', '2': 'scam_sassa', '3': 'scam_phishing', '4': 'scam_investment', '5': 'scam_jobs', '0': 'root' },
+    },
+    scam_simswap: { text: scam_simswap, options: { '0': 'scam', '00': 'root' } },
+    scam_sassa: { text: scam_sassa, options: { '0': 'scam', '00': 'root' } },
+    scam_phishing: { text: scam_phishing, options: { '0': 'scam', '00': 'root' } },
+    scam_investment: { text: scam_investment, options: { '0': 'scam', '00': 'root' } },
+    scam_jobs: { text: scam_jobs, options: { '0': 'scam', '00': 'root' } },
+
+    /* ------------------------------ Leave Feedback ------------------------------ */
+    feedback: {
+      text: 'Leave Feedback\nWhat kind of feedback is this?\n1. General\n2. Complaint\n3. Suggestion\n4. Compliment\n\n0. Main menu',
+      options: { '1': 'feedback_capture', '2': 'feedback_capture', '3': 'feedback_capture', '4': 'feedback_capture', '0': 'root' },
+      storeKey: 'feedbackCategory',
+      optionLabels: { '1': 'General', '2': 'Complaint', '3': 'Suggestion', '4': 'Compliment' },
+    },
+    feedback_capture: {
+      text: 'Please type your feedback:',
+      next: 'feedback_done',
+      capture: 'feedbackText',
+    },
+    feedback_done: {
+      text: 'Thank you!\n\nYour \${feedbackCategory} has been recorded:\n"\${feedbackText}"\n\nReference: FB\${refNum}\n\nWe appreciate you helping us improve Vula Lwazi.',
+    },
   },
 
   '*100#': {
     root: {
-      text: 'Vula Lwazi\nFree seasonal planting advice matched to South African growing conditions.\n\nDial *1234# to get started.',
+      text: 'Vula Lwazi\nA free helpline for Health, Social Grants, Farming, Municipal Services, Scam Alerts and Feedback.\n\nDial *1234# to get started.',
     },
   },
 };
 
 function resolveText(text, data) {
   return text.replace(/\$\{(\w+)\}/g, (_, key) => (data[key] !== undefined ? data[key] : ''));
+}
+
+function genRefNum() {
+  return String(Math.floor(100000 + Math.random() * 900000));
 }
 
 const KEYS = [
@@ -503,7 +1143,7 @@ export default function USSDSimulator() {
   function placeCall() {
     if (!dialed) return;
     if (USSD_TREE[dialed]) {
-      setUssd({ code: dialed, currentNodeId: 'root', data: {}, input: '', error: '' });
+      setUssd({ code: dialed, currentNodeId: 'root', data: { refNum: genRefNum() }, input: '', error: '' });
       setCallState('ussd-loading');
     } else if (/^\*[0-9*#]*#$/.test(dialed)) {
       setInvalidCode(dialed);
@@ -536,7 +1176,13 @@ export default function USSDSimulator() {
         setUssd((u) => ({ ...u, error: 'Invalid selection. Please try again.', input: '' }));
         return;
       }
-      setUssd((u) => ({ ...u, currentNodeId: nextId, input: '', error: '' }));
+      setUssd((u) => {
+        const newData = { ...u.data };
+        if (node.storeKey) {
+          newData[node.storeKey] = (node.optionLabels && node.optionLabels[value]) || value;
+        }
+        return { ...u, currentNodeId: nextId, data: newData, input: '', error: '' };
+      });
     } else if (node.next) {
       setUssd((u) => ({
         ...u,
